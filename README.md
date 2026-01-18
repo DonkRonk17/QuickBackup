@@ -1,3 +1,5 @@
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/45066062-b1e3-4195-89c9-9193a3c3f4f9" />
+
 # 💾 QuickBackup - Simple, Fast Backup Automation
 
 **Never lose your important files again!** QuickBackup makes backing up your data as simple as one command - with incremental backups, compression, and easy restoration.
@@ -380,6 +382,9 @@ python quickbackup.py list
 **Your backups are 100% under your control.**
 
 ---
+
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/282e9c47-b256-4abe-902d-c55f308b8467" />
+
 
 ## 🤝 Contributing
 
