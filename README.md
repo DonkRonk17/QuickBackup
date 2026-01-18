@@ -431,7 +431,7 @@ If you find QuickBackup useful:
 
 ---
 
-**Created by Team Brain**  
+**Created by Randell Logan Smith and Team Brain**  
 **Part of the Holy Grail Automation Project**
 
 Protect your data with zero hassle! 💾✨
