@@ -1,0 +1,394 @@
+================================================================================
+QUICKBACKUP CHEAT SHEET
+================================================================================
+
+Simple, Fast Backup Automation - One command to protect your files!
+
+================================================================================
+QUICK START
+================================================================================
+
+1. Create a backup profile:
+   python quickbackup.py create <name> <source_folders> --dest <backup_location>
+
+2. Run your first backup:
+   python quickbackup.py backup <name>
+
+3. List all profiles:
+   python quickbackup.py list
+
+That's it! Your files are now safely backed up.
+
+================================================================================
+COMMANDS OVERVIEW
+================================================================================
+
+create    - Create a new backup profile
+backup    - Run a backup
+list      - List all profiles
+show      - Show profile details
+delete    - Delete a profile
+
+================================================================================
+CREATE PROFILE
+================================================================================
+
+Syntax:
+  python quickbackup.py create <name> <source> [source2...] [--dest <destination>]
+
+Examples:
+
+  # Single source folder
+  python quickbackup.py create documents ~/Documents --dest /backup/drive
+
+  # Multiple source folders
+  python quickbackup.py create full-backup ~/Documents ~/Pictures ~/Projects --dest /backup
+
+  # Without destination (will prompt later)
+  python quickbackup.py create temp-backup ~/Desktop
+
+Arguments:
+  name         Profile name (alphanumeric, dashes, underscores)
+  source       Folder(s) to backup (can specify multiple)
+  --dest       Destination folder for backups
+
+================================================================================
+RUN BACKUP
+================================================================================
+
+Syntax:
+  python quickbackup.py backup <name> [options]
+
+Options:
+  --dest <path>      Override destination for this backup
+  --no-incremental   Backup ALL files (ignore change detection)
+  --no-compress      Don't create ZIP (keep as folder)
+
+Examples:
+
+  # Standard backup (incremental + compression)
+  python quickbackup.py backup documents
+
+  # Force full backup of all files
+  python quickbackup.py backup documents --no-incremental
+
+  # Backup without compression (faster for media)
+  python quickbackup.py backup photos --no-compress
+
+  # Override destination temporarily
+  python quickbackup.py backup documents --dest /usb-drive/emergency
+
+  # Combine options
+  python quickbackup.py backup projects --no-incremental --no-compress --dest /tmp
+
+================================================================================
+LIST PROFILES
+================================================================================
+
+Syntax:
+  python quickbackup.py list
+
+Output:
+  [3 profile(s)]
+  
+  * daily-docs
+    Sources: 1 folder(s)
+    Last backup: 2026-01-30T09:00:00
+  
+  * photos
+    Sources: 2 folder(s)
+    Last backup: Never
+  
+  * projects
+    Sources: 3 folder(s)
+    Last backup: 2026-01-28T18:00:00
+
+================================================================================
+SHOW PROFILE DETAILS
+================================================================================
+
+Syntax:
+  python quickbackup.py show <name>
+
+Example:
+  python quickbackup.py show documents
+
+Output:
+  ============================================================
+  Profile: documents
+  ============================================================
+  
+  Created: 2026-01-30T10:00:00
+  Last Backup: 2026-01-30T18:00:00
+  
+  Sources (1):
+    [OK] /home/user/Documents
+  
+  Destination:
+    [OK] /backup/drive
+  
+  ============================================================
+
+Symbols:
+  [OK]  = Path exists
+  [X]   = Path does NOT exist (warning!)
+
+================================================================================
+DELETE PROFILE
+================================================================================
+
+Syntax:
+  python quickbackup.py delete <name>
+
+Example:
+  python quickbackup.py delete old-backup
+
+Note: This only deletes the profile config, NOT your backup files.
+
+================================================================================
+HOW INCREMENTAL BACKUPS WORK
+================================================================================
+
+Default behavior (incremental = ON):
+  1. First backup: ALL files are copied and checksums stored
+  2. Later backups: Only CHANGED files are copied
+
+Change detection:
+  - MD5 checksums detect modified files
+  - New files are always backed up
+  - Deleted files are NOT removed from backups (archive behavior)
+
+Benefits:
+  - 90%+ faster subsequent backups
+  - Much smaller backup files
+  - Saves disk space
+
+Force full backup:
+  python quickbackup.py backup <name> --no-incremental
+
+================================================================================
+COMPRESSION
+================================================================================
+
+Default: ON (ZIP compression)
+
+Results:
+  - Text files: 70-90% reduction
+  - Already compressed (JPEG, MP4): 0-5% reduction
+  - Mixed content: 40-60% reduction
+
+Disable for:
+  - Photo collections (already compressed)
+  - Video files (already compressed)
+  - Very large backups (faster without compression)
+
+Command:
+  python quickbackup.py backup <name> --no-compress
+
+================================================================================
+BACKUP OUTPUT
+================================================================================
+
+With compression (default):
+  /backup/drive/documents_20260130_180000.zip
+
+Without compression:
+  /backup/drive/documents_20260130_180000/
+    ├── Documents/
+    │   ├── file1.docx
+    │   └── file2.pdf
+    └── ...
+
+Timestamp format: YYYYMMDD_HHMMSS
+
+================================================================================
+FILE LOCATIONS
+================================================================================
+
+Configuration directory:
+  ~/.quickbackup/
+
+Configuration files:
+  ~/.quickbackup/config.json         Global settings
+  ~/.quickbackup/checksums.json      File checksums for incremental
+  ~/.quickbackup/profiles/           Profile storage
+    ├── documents.json
+    ├── photos.json
+    └── projects.json
+
+================================================================================
+PYTHON API
+================================================================================
+
+Import:
+  from quickbackup import QuickBackup
+
+Basic usage:
+  backup = QuickBackup()
+  
+  # Create profile
+  backup.create_profile("myprofile", ["/path/to/source"], "/path/to/dest")
+  
+  # Run backup
+  backup.backup("myprofile")
+  
+  # List profiles
+  backup.list_profiles()
+  
+  # Show profile
+  backup.show_profile("myprofile")
+  
+  # Delete profile
+  backup.delete_profile("myprofile")
+
+Advanced backup options:
+  backup.backup(
+      "myprofile",
+      destination="/override/path",  # Optional override
+      incremental=True,              # True = only changed files
+      compress=True                  # True = create ZIP
+  )
+
+Checksum operations:
+  # Calculate file checksum
+  checksum = backup.calculate_checksum(Path("/path/to/file"))
+  
+  # Check if file changed since last backup
+  changed = backup.has_file_changed(Path("/path/to/file"), "profile_name")
+
+================================================================================
+AUTOMATION EXAMPLES
+================================================================================
+
+Windows Task Scheduler (daily_backup.bat):
+  @echo off
+  cd C:\path\to\QuickBackup
+  python quickbackup.py backup daily-docs
+  python quickbackup.py backup projects
+
+Linux/macOS Cron (9 AM daily):
+  0 9 * * * python /path/to/quickbackup.py backup daily-docs >> /var/log/backup.log 2>&1
+
+Python script:
+  import subprocess
+  profiles = ["docs", "photos", "projects"]
+  for p in profiles:
+      subprocess.run(["python", "quickbackup.py", "backup", p])
+
+================================================================================
+INTEGRATION WITH TEAM BRAIN TOOLS
+================================================================================
+
+With SynapseLink:
+  from quickbackup import QuickBackup
+  from synapselink import quick_send
+  
+  backup = QuickBackup()
+  result = backup.backup("daily-docs")
+  
+  if result:
+      quick_send("TEAM", "Backup Complete", "daily-docs backup successful")
+
+With SessionReplay:
+  from quickbackup import QuickBackup
+  from sessionreplay import SessionReplay
+  
+  replay = SessionReplay()
+  backup = QuickBackup()
+  
+  session_id = replay.start_session("ATLAS", task="Backup")
+  backup.backup("daily-docs")
+  replay.end_session(session_id, status="COMPLETED")
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "Profile not found"
+Solution: Check profile name with: python quickbackup.py list
+
+Problem: "Destination does not exist"
+Solution: Create the destination folder or mount the drive
+
+Problem: "No destination specified"
+Solution: Add --dest flag or update profile with destination
+
+Problem: Backup is slow
+Solution: Use incremental mode (default) or disable compression
+
+Problem: Source path doesn't exist
+Solution: Backup continues but skips missing sources (warning shown)
+
+================================================================================
+BEST PRACTICES
+================================================================================
+
+1. Use descriptive profile names
+   GOOD: daily-docs, weekly-photos, project-xyz
+   BAD:  backup1, test, asdf
+
+2. Test backups work
+   python quickbackup.py backup <name>
+   Then verify the ZIP/folder exists
+
+3. Use incremental for daily backups
+   Saves time and space
+
+4. Use full backup before risky changes
+   python quickbackup.py backup <name> --no-incremental
+
+5. Verify destination is accessible
+   python quickbackup.py show <name>
+   Check for [OK] next to destination
+
+6. Regular cleanup
+   Manually delete old backup ZIPs you no longer need
+
+================================================================================
+COMMON WORKFLOWS
+================================================================================
+
+Daily document backup:
+  python quickbackup.py backup daily-docs
+
+Weekly full backup:
+  python quickbackup.py backup weekly --no-incremental
+
+Before risky changes:
+  python quickbackup.py backup project --no-incremental
+
+Photo backup (no compression):
+  python quickbackup.py backup photos --no-compress
+
+Emergency backup to USB:
+  python quickbackup.py backup important --dest /usb-drive
+
+================================================================================
+RESOURCES
+================================================================================
+
+Documentation:   AutoProjects/QuickBackup/README.md
+Examples:        AutoProjects/QuickBackup/EXAMPLES.md
+Integration:     AutoProjects/QuickBackup/INTEGRATION_PLAN.md
+GitHub:          https://github.com/DonkRonk17/QuickBackup
+Issues:          https://github.com/DonkRonk17/QuickBackup/issues
+
+================================================================================
+VERSION INFO
+================================================================================
+
+QuickBackup v1.0
+Python 3.7+ required
+Zero external dependencies (Python standard library only)
+Cross-platform: Windows, macOS, Linux
+License: MIT
+
+================================================================================
+CREDITS
+================================================================================
+
+Built by: ATLAS (Team Brain)
+For: Logan Smith / Metaphy LLC
+Part of: Beacon HQ / Team Brain Ecosystem
+
+================================================================================
